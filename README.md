@@ -25,6 +25,29 @@ optimized release build above.
 
 For more info about setting up WASM-4, see the [quickstart guide](https://wasm4.org/docs/getting-started/setup?code-lang=rust#quickstart).
 
+## Web bundle and GitHub Pages
+
+Install the Rust WebAssembly target and WASM-4 CLI, then create a standalone HTML
+bundle:
+
+```shell
+rustup target add wasm32-unknown-unknown
+npm install --global wasm4@2.7.1
+make bundle-web
+```
+
+The output is `bin/index.html`. The tracked `.cargo/config.toml` selects the
+WebAssembly target and the memory/linker settings required by WASM-4.
+
+The [Pages workflow](.github/workflows/pages.yml) installs these tools on the
+runner, builds the release cartridge, and uploads the HTML bundle. Pull requests
+targeting `main` build without deploying. Pushes to `main` (or manual runs on
+`main`) also deploy to GitHub Pages.
+
+Before the first deployment, open the repository's **Settings > Pages** and
+select **GitHub Actions** as the build and deployment source. After deployment,
+the site is available at <https://benc-uk.github.io/wasm4-adventure/>.
+
 ## Custom 6x8 font
 
 [src/font.rs](./src/font.rs) contains the Rust conversion of

@@ -1,5 +1,4 @@
 .venv/
-.cargo/
 .vite/
 target/
 bin/

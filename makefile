@@ -7,9 +7,10 @@ build:
 
 clean:
 	cargo clean
-	rm -rf .vite .cargo target bin __pycache__
+	rm -rf .vite target bin __pycache__
 
 bundle-web: build
+	mkdir -p bin
 	w4 bundle target/wasm32-unknown-unknown/release/cart.wasm --html bin/index.html --title "WASM4 Adventure"
 
 bundle-linux: build
