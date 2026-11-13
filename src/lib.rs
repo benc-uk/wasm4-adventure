@@ -104,7 +104,7 @@ fn start() {
 
         section = Section {
             title: "A Meandering Path".to_string(),
-            description: "The path winds through the\nforest, surrounded by tall trees\nand dense foliage.\n\nYou can go no further, as Ben\nhasn't added the rest of\nthe zgame code".to_string(),
+            description: "The path winds through the\nforest, surrounded by tall trees\nand dense foliage.\n\nYou can go no further, as Ben\nhasn't added the rest of\nthe game code".to_string(),
             options: vec![Option {
                 label: "Return".to_string(),
                 target_section: 0,
@@ -114,7 +114,7 @@ fn start() {
         _ = GAME.sections.insert(section.id, section);
 
         // For debugging
-        GAME.active_section = 4;
+        GAME.active_section = 0;
     }
 }
 
@@ -176,6 +176,7 @@ fn update() {
             if GAME.sections.contains_key(&selected_option.target_section) {
                 GAME.active_section = selected_option.target_section;
                 GAME.selected_option = 0;
+                tone(162 | (223 << 16), 10, 100, TONE_MODE4);
             }
         }
     }
