@@ -1,0 +1,6 @@
+.venv/
+.cargo/
+.vite/
+target/
+bin/
+__pycache__/
