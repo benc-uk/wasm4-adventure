@@ -1,0 +1,38 @@
+sections:
+  - id: start
+    title: "Woodland Path"
+    description: "You are tired from your journey\nand stand in some woodland,\nby a path running north. \n\nThere is a small, tatty wooden\nhut."
+    options:
+      - label: "Go North"
+        target_section: woods
+      - label: "Enter Hut"
+        target_section: hut
+      - label: "Go South"
+        target_section: path
+  - id: hut
+    title: "Inside Hut"
+    description: "Inside the hut.\nIt is very tatty and run down\n\nThere is a small table in the\ncorner, a notebook lies on it."
+    options:
+      - label: "Leave"
+        target_section: start
+      - label: "Read Notebook"
+        target_section: notebook
+  - id: notebook
+    title: "Dusty Notebook"
+    description: "The notebook is dusty and old.\nIts pages filled with ancient\nwritings.\n\nYou open to a page that\nsimply says:\n\"Phil Smells of cabbage farts\"."
+    options:
+      - label: "Return to Hut"
+        target_section: hut
+  - id: woods
+    title: "The Woods"
+    description: "You are in the woods.\nThe trees are tall and dense,\nblocking most of the sunlight.\n\nYou are too scared to go\nfurther."
+    options:
+      - label: "Scarper"
+        target_section: start
+  - id: path
+    title: "A Meandering Path"
+    description: "The path winds through the\nforest, surrounded by tall trees\nand dense foliage.\n\nYou can go no further, as Ben\nhasn't added the rest of\nthe game code"
+    options:
+      - label: "Return"
+        target_section: start
+  

@@ -22,3 +22,7 @@ lto = true
 [features]
 # use `--no-default-features` or comment out next line to disable allocator
 default = ["buddy-alloc"]
+
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_yaml_ng = "0.10"

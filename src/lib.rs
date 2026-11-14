@@ -1,35 +1,55 @@
+#![allow(static_mut_refs)]
 #[cfg(feature = "buddy-alloc")]
 mod alloc;
 mod text;
 mod wasm4;
 use heapless::index_map::FnvIndexMap;
 
+include!(concat!(env!("OUT_DIR"), "/story.rs"));
+
 use wasm4::*;
 
 const SPRITE_SIZE: u32 = 16;
+enum Mode {
+    Title,
+    Main,
+    Popup,
+    Combat,
+    Character,
+}
 
 struct GameState {
+    mode: Mode,
     selected_option: usize,
     sections: FnvIndexMap<usize, Section, 128>,
     active_section: usize,
+    player_name: &'static str,
+    items: Vec<&'static str>,
+    hp: u32,
+    max_hp: u32,
 }
 
 struct Section {
     id: usize,
-    title: String,
-    description: String,
+    title: &'static str,
+    description: &'static str,
     options: Vec<Option>,
 }
 
 struct Option {
-    label: String,
+    label: &'static str,
     target_section: usize,
 }
 
 static mut GAME: GameState = GameState {
+    mode: Mode::Main,
     selected_option: 0,
     sections: FnvIndexMap::new(),
     active_section: 0,
+    player_name: "Fearless Steve",
+    items: Vec::new(),
+    hp: 100,
+    max_hp: 100,
 };
 static mut PREVIOUS_GAMEPAD: u8 = 0;
 
@@ -39,79 +59,12 @@ fn start() {
     unsafe {
         *PALETTE = [0x99c9b3, 0x579c9a, 0x294257, 0x191b1a];
 
-        // Create the initial sections for the game
-        let mut section = Section {
-            title: "Woodland Path".to_string(),
-            description: "You are tired from your journey\nand stand in some woodland,\nby a path running north. \n\nThere is a small, tatty wooden\nhut.".to_string(),
-            options: vec![
-                Option {
-                    label: "Go North".to_string(),
-                    target_section: 3,
-                },
-                Option {
-                    label: "Enter Hut".to_string(),
-                    target_section: 1,
-                },
-                Option {
-                    label: "Go South".to_string(),
-                    target_section: 4,
-                },
-            ],
-            id: 0,
-        };
-        _ = GAME.sections.insert(section.id, section);
+        // This bit of magic gives me readable errors when code panics
+        std::panic::set_hook(Box::new(|info| {
+            wasm4::trace(format!("{info}"));
+        }));
 
-        section = Section {
-            title: "Inside Hut".to_string(),
-            description: "Inside the hut.\nIt is very tatty and run down\n\nThere is a small table in the\ncorner, a notebook lies on it.".to_string(),
-            options: vec![Option {
-                label: "Leave".to_string(),
-                target_section: 0,
-            },
-            Option {
-                label: "Read Notebook".to_string(),
-                target_section: 2,
-            }],
-            id: 1,
-        };
-        _ = GAME.sections.insert(section.id, section);
-
-        section = Section {
-            title: "Dusty Notebook".to_string(),
-            description: "The notebook is dusty and old.\nIts pages filled with ancient\nwritings.\n\nYou open to a page that\nsimply says:\n\"Phil Smells of cabbage farts\".".to_string(),
-            options: vec![
-                Option {
-                    label: "Return to Hut".to_string(),
-                    target_section: 1,
-                },
-            ],
-            id: 2,
-        };
-        _ = GAME.sections.insert(section.id, section);
-
-        section = Section {
-            title: "The Woods".to_string(),
-            description: "You are in the woods.\nThe trees are tall and dense,\nblocking most of the sunlight.\n\nYou are too scared to go\nfurther.".to_string(),
-            options: vec![
-                Option {
-                    label: "Scarper".to_string(),
-                    target_section: 0,
-                },
-            ],
-            id: 3,
-        };
-        _ = GAME.sections.insert(section.id, section);
-
-        section = Section {
-            title: "A Meandering Path".to_string(),
-            description: "The path winds through the\nforest, surrounded by tall trees\nand dense foliage.\n\nYou can go no further, as Ben\nhasn't added the rest of\nthe game code".to_string(),
-            options: vec![Option {
-                label: "Return".to_string(),
-                target_section: 0,
-            }],
-            id: 4,
-        };
-        _ = GAME.sections.insert(section.id, section);
+        load_story(); // Comes from the include of story.rs above
 
         // For debugging
         GAME.active_section = 0;
@@ -135,33 +88,29 @@ fn update() {
         let section = &GAME.sections[&active_section];
 
         *DRAW_COLORS = 0x30;
-        text::draw_text(&section.title, 4, 2);
+        text::draw_text(section.title, 4, 2);
 
         *DRAW_COLORS = 0x40;
-        text::draw_text(&section.description, 1, 15);
+        text::draw_text(section.description, 1, 15);
 
         *DRAW_COLORS = 0x2;
         line(2, 12, 157, 12);
 
         // six option buttons for the current section
         for (i, option) in section.options.iter().enumerate() {
-            draw_beveled_button(
-                4,
-                100 + i as i32 * 20,
-                150,
-                16,
-                &option.label,
-                i == unsafe { GAME.selected_option },
-            );
+            draw_beveled_button(4, 100 + i as i32 * 20, 150, 16, option.label, i == GAME.selected_option);
         }
 
-        if pressed_this_frame & BUTTON_DOWN != 0 {
-            if GAME.selected_option >= GAME.sections[&GAME.active_section].options.len() - 1 {
-                GAME.selected_option = GAME.sections[&GAME.active_section].options.len() - 1
+        let option_count = GAME.sections[&GAME.active_section].options.len();
+
+        if pressed_this_frame & BUTTON_DOWN != 0 && option_count > 0 {
+            if GAME.selected_option >= option_count - 1 {
+                GAME.selected_option = option_count - 1
             } else {
                 GAME.selected_option += 1;
             }
         }
+
         if pressed_this_frame & BUTTON_UP != 0 {
             if GAME.selected_option == 0 {
                 GAME.selected_option = 0;
@@ -170,7 +119,7 @@ fn update() {
             }
         }
 
-        if pressed_this_frame & BUTTON_2 != 0 {
+        if pressed_this_frame & BUTTON_1 != 0 && option_count > 0 {
             let selected_option = &GAME.sections[&GAME.active_section].options[GAME.selected_option];
             // check exists
             if GAME.sections.contains_key(&selected_option.target_section) {
